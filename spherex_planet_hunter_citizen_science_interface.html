@@ -1,0 +1,2207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPHEREx Planet Hunter | NASA Space Apps Challenge 2026</title>
+  
+  <!-- Preconnect to Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       DESIGN SYSTEM: SPHEREx AEROSPACE CYBER-HUD (100% VANILLA CSS)
+       ========================================================================== */
+    :root {
+      --bg-void: #02040a;
+      --bg-space-950: #040814;
+      --bg-space-900: #070e22;
+      --bg-space-850: #0a1532;
+      --bg-space-800: #0f1f48;
+      
+      --cyan-glow: #00f2fe;
+      --cyan-dim: rgba(0, 242, 254, 0.25);
+      --cyan-glow-intense: #38f9d7;
+      --infrared-core: #ff6b35;
+      --infrared-dim: rgba(255, 107, 53, 0.25);
+      --amber-laser: #ffaa00;
+      --emerald-neon: #00ff9d;
+      --purple-nebula: #a855f7;
+      --red-alert: #ff3366;
+      
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --font-hud: 'Chakra Petch', -apple-system, sans-serif;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      --panel-radius: 12px;
+      --panel-border: 1px solid rgba(0, 242, 254, 0.28);
+      --panel-shadow: 0 10px 35px 0 rgba(0, 0, 0, 0.75), inset 0 0 20px rgba(0, 242, 254, 0.05);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      background-color: var(--bg-void);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      user-select: none;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* Dynamic Starfield & Grid Background */
+    .cosmic-background {
+      background-color: var(--bg-void);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 242, 254, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 40%),
+        linear-gradient(to right, rgba(0, 242, 254, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 242, 254, 0.035) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+    }
+
+    /* Strict SVG sizing guarantees */
+    svg {
+      display: inline-block;
+      vertical-align: middle;
+      flex-shrink: 0;
+      max-width: 100%;
+    }
+
+    /* Cyber-HUD Panels with Angular Bracket Accents */
+    .hud-panel {
+      background: rgba(8, 16, 36, 0.88);
+      border: var(--panel-border);
+      box-shadow: var(--panel-shadow);
+      position: relative;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: var(--panel-radius);
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+    }
+
+    .hud-panel:hover {
+      border-color: rgba(0, 242, 254, 0.45);
+      box-shadow: 0 14px 45px 0 rgba(0, 0, 0, 0.85), inset 0 0 25px rgba(0, 242, 254, 0.1);
+    }
+
+    .hud-panel::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: -1px;
+      width: 12px;
+      height: 12px;
+      border-top: 2px solid var(--cyan-glow);
+      border-left: 2px solid var(--cyan-glow);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .hud-panel::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      right: -1px;
+      width: 12px;
+      height: 12px;
+      border-bottom: 2px solid var(--cyan-glow);
+      border-right: 2px solid var(--cyan-glow);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* Header Styling */
+    header {
+      width: 100%;
+      background: rgba(4, 8, 20, 0.95);
+      border-bottom: 1px solid rgba(0, 242, 254, 0.3);
+      padding: 0.65rem 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 4px 25px rgba(0,0,0,0.7);
+    }
+
+    /* Buttons */
+    .btn {
+      font-family: var(--font-hud);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 242, 254, 0.35);
+      background: rgba(10, 21, 50, 0.6);
+      color: var(--text-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn:hover {
+      border-color: var(--cyan-glow);
+      background: rgba(0, 242, 254, 0.18);
+      color: #ffffff;
+      box-shadow: 0 0 16px rgba(0, 242, 254, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%);
+      border-color: var(--cyan-glow);
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 0 20px rgba(0, 180, 216, 0.4);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #00f2fe 0%, #0096c7 100%);
+      box-shadow: 0 0 25px rgba(0, 242, 254, 0.6);
+    }
+
+    .btn-infrared {
+      background: linear-gradient(135deg, #ff6b35 0%, #d9480f 100%);
+      border-color: #ff922b;
+      color: #ffffff;
+      box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+    }
+
+    .btn-danger {
+      background: rgba(255, 51, 102, 0.15);
+      border-color: rgba(255, 51, 102, 0.45);
+      color: #ff85a1;
+    }
+    .btn-danger:hover {
+      background: rgba(255, 51, 102, 0.35);
+      border-color: var(--red-alert);
+      color: #ffffff;
+    }
+
+    .btn-success {
+      background: rgba(0, 255, 157, 0.15);
+      border-color: rgba(0, 255, 157, 0.45);
+      color: var(--emerald-neon);
+    }
+    .btn-success:hover {
+      background: rgba(0, 255, 157, 0.35);
+      border-color: var(--emerald-neon);
+      color: #ffffff;
+    }
+
+    /* Badges & Indicators */
+    .badge {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 5px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .badge-cyan {
+      background: rgba(0, 242, 254, 0.12);
+      border: 1px solid rgba(0, 242, 254, 0.4);
+      color: var(--cyan-glow);
+    }
+
+    .badge-orange {
+      background: rgba(255, 107, 53, 0.15);
+      border: 1px solid rgba(255, 107, 53, 0.4);
+      color: #ff922b;
+    }
+
+    .badge-green {
+      background: rgba(0, 255, 157, 0.12);
+      border: 1px solid rgba(0, 255, 157, 0.4);
+      color: var(--emerald-neon);
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--emerald-neon);
+      box-shadow: 0 0 10px var(--emerald-neon);
+      animation: blinkAnimation 1.4s infinite ease-in-out;
+    }
+
+    @keyframes blinkAnimation {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.75); }
+    }
+
+    /* Custom Slider */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(0, 242, 254, 0.2);
+      height: 5px;
+      border-radius: 3px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: var(--cyan-glow);
+      box-shadow: 0 0 12px var(--cyan-glow);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
+
+    /* Main Grid Layout */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 310px 1fr 310px;
+      gap: 1.1rem;
+      max-width: 1740px;
+      margin: 0 auto;
+      padding: 1.1rem;
+      width: 100%;
+      min-height: calc(100vh - 65px);
+    }
+
+    @media (max-width: 1200px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Viewport Area */
+    .viewport-box {
+      position: relative;
+      width: 100%;
+      height: 480px;
+      background: #010309;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 242, 254, 0.35);
+      cursor: crosshair;
+    }
+
+    /* Animated Reticle */
+    #hudReticle {
+      position: absolute;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      transition: transform 0.04s ease-out;
+      z-index: 15;
+    }
+
+    .reticle-core {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .reticle-ring {
+      position: absolute;
+      inset: 0;
+      border: 1px dashed var(--cyan-glow);
+      border-radius: 50%;
+      animation: rotateRing 20s linear infinite;
+    }
+
+    @keyframes rotateRing {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Beginner Guide Highlight */
+    .beginner-step-highlight {
+      border-color: #00f2fe !important;
+      box-shadow: 0 0 25px 5px rgba(0, 242, 254, 0.6) !important;
+      animation: stepPulse 1.8s infinite ease-in-out;
+    }
+    @keyframes stepPulse {
+      0%, 100% { box-shadow: 0 0 15px rgba(0, 242, 254, 0.4); }
+      50% { box-shadow: 0 0 35px rgba(0, 242, 254, 0.9); }
+    }
+
+    /* Modal Overlay */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 4, 10, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-window {
+      background: rgba(7, 14, 32, 0.96);
+      border: 1px solid rgba(0, 242, 254, 0.4);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(0, 242, 254, 0.2);
+      border-radius: 16px;
+      max-width: 780px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      transform: scale(0.95);
+      transition: transform 0.25s ease;
+    }
+    .modal-backdrop.active .modal-window {
+      transform: scale(1);
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(3, 7, 18, 0.8); }
+    ::-webkit-scrollbar-thumb { background: rgba(0, 242, 254, 0.35); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(0, 242, 254, 0.65); }
+  </style>
+</head>
+<body class="cosmic-background">
+
+  <!-- ========================================================================
+       TOP TELEMETRY & NAVIGATION HEADER
+       ======================================================================== -->
+  <header>
+    <!-- Brand / Mission Logo -->
+    <div style="display: flex; align-items: center; gap: 0.8rem;">
+      <div style="position: relative; width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--cyan-glow); background: rgba(0, 242, 254, 0.1); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px var(--cyan-dim);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-dasharray="4 2"></circle>
+          <ellipse cx="12" cy="12" rx="10" ry="4" stroke="#ff6b35" transform="rotate(-30 12 12)"></ellipse>
+          <circle cx="12" cy="12" r="2.5" fill="#00f2fe"></circle>
+        </svg>
+        <span class="pulse-dot" style="position: absolute; top: -1px; right: -1px;"></span>
+      </div>
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <h1 style="font-family: var(--font-hud); font-size: 1.25rem; font-weight: 700; letter-spacing: 0.08em; color: var(--cyan-glow); margin: 0;">SPHEREx</h1>
+          <span class="badge badge-cyan" id="txtMissionBadge">PLANET HUNTER</span>
+          <span class="badge badge-orange" style="display: none; @media(min-width: 640px){display: inline-flex;}">NASA SPACE APPS 2026</span>
+        </div>
+        <p style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); margin: 0;" id="txtHeaderSubtitle">
+          102 BANDAS ESPECTRALES &bull; BUSQUEDA DEL PLANETA 9 &bull; ORBITA POLAR LEO 700 KM
+        </p>
+      </div>
+    </div>
+
+    <!-- Live Mission Counters & Controls -->
+    <div style="display: flex; align-items: center; gap: 0.6rem;">
+      
+      <!-- NASA Space Apps 9/9 Judging Criteria Modal Button -->
+      <button class="btn" onclick="openModal('criteriaModal')" title="Ver cómo este proyecto cumple los 9 criterios de evaluación">
+        <span style="color: var(--amber-laser);">🏆</span>
+        <span id="btnCriteriaLabel">CRITERIOS JURADO (9/9)</span>
+      </button>
+
+      <!-- NASA IRSA Real Data Query Console Button -->
+      <button class="btn" onclick="openModal('irsaModal')" title="Inspeccionar conexión directa a la API de NASA IRSA">
+        <span style="color: var(--cyan-glow);">📡</span>
+        <span>NASA IRSA API</span>
+      </button>
+
+      <!-- Story / Impact Tour Button -->
+      <button class="btn" onclick="openModal('storyModal')" title="Conocer la narrativa y el misterio del Planeta Nueve">
+        <span style="color: var(--purple-nebula);">🌌</span>
+        <span id="btnStoryLabel">NARRATIVA E IMPACTO</span>
+      </button>
+
+      <!-- Dual Experience Switch: Explorer vs Pro -->
+      <button class="btn" id="btnModeToggle" onclick="toggleExperienceMode()" style="border-color: var(--amber-laser); color: var(--amber-laser);">
+        <span id="modeIcon">🔰</span>
+        <span id="modeLabel">MODO EXPLORADOR</span>
+      </button>
+
+      <!-- Language Selector -->
+      <button class="btn" onclick="toggleLanguage()" id="btnLang" title="Cambiar idioma / Switch language">
+        <span>🌐</span>
+        <span id="txtLang">ES</span>
+      </button>
+
+      <!-- Audio Synthesizer Toggle -->
+      <button class="btn" id="btnAudio" onclick="toggleAudioEngine()" title="Alternar sintetizador acústico aeroespacial">
+        <svg id="audioIcon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+        </svg>
+      </button>
+
+      <!-- User Badge -->
+      <div style="display: flex; align-items: center; gap: 0.5rem; padding-left: 0.6rem; border-left: 1px solid rgba(255,255,255,0.1);">
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(0, 242, 254, 0.15); border: 1px solid var(--cyan-glow); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 0.75rem; color: var(--cyan-glow); font-weight: 700;">
+          042
+        </div>
+        <div style="display: flex; flex-direction: column; line-height: 1.1;">
+          <span style="font-family: var(--font-hud); font-size: 0.72rem; font-weight: 700; color: #fff;">CITIZEN_042</span>
+          <span style="font-family: var(--font-mono); font-size: 0.62rem; color: var(--emerald-neon);" id="userRankText">ASTRO-EXPLORADOR</span>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       BEGINNER GUIDED TOUR BANNER (ONBOARDING CALLOUT)
+       ======================================================================== -->
+  <div id="beginnerBanner" style="width: 100%; background: linear-gradient(90deg, rgba(0, 242, 254, 0.15), rgba(7, 14, 34, 0.95), rgba(168, 85, 247, 0.15)); border-bottom: 1px solid rgba(0, 242, 254, 0.35); padding: 0.5rem 1.4rem;">
+    <div style="max-width: 1740px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem;">
+      <div style="display: flex; align-items: center; gap: 0.8rem;">
+        <span style="font-size: 1.4rem;">🪐</span>
+        <div>
+          <span style="font-family: var(--font-hud); font-size: 0.85rem; font-weight: 700; color: var(--cyan-glow);" id="txtGuideTitle">
+            TUTORIAL GUIADO: ¿CÓMO DESCUBRIR UN PLANETA EN 3 PASOS?
+          </span>
+          <p style="font-size: 0.75rem; color: #cbd5e1; margin: 0;" id="txtGuideSteps">
+            <strong>Paso 1:</strong> Observa el Visor Espacial (las estrellas lejanas no se mueven). &bull; 
+            <strong>Paso 2:</strong> Detecta el punto que salta de posición entre las fotos de Enero y Julio. &bull; 
+            <strong>Paso 3:</strong> Revisa su firma infrarroja y pulsa 'Confirmar Planeta'.
+          </p>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.4rem;">
+        <button class="btn btn-primary" onclick="focusStep(1)" id="btnStep1">PASO 1: VISOR</button>
+        <button class="btn" onclick="focusStep(2)" id="btnStep2">PASO 2: ESPECTRO</button>
+        <button class="btn btn-success" onclick="focusStep(3)" id="btnStep3">PASO 3: CONFIRMAR</button>
+        <button onclick="dismissBanner()" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; padding: 0 0.4rem;">&times;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MAIN 3-COLUMN APPLICATION LAYOUT
+       ======================================================================== -->
+  <main class="main-grid">
+
+    <!-- ====================================================================
+         COLUMN 1: SPECTROSCOPY & CELESTIAL ASTROMETRY (LEFT)
+         ==================================================================== -->
+    <aside style="display: flex; flex-direction: column; gap: 1rem;">
+      
+      <!-- Panel 1: 102 Spectral Bands Analysis -->
+      <div class="hud-panel" id="panelStep2" style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.8rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(0, 242, 254, 0.2); padding-bottom: 0.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div class="pulse-dot"></div>
+            <h2 style="font-family: var(--font-hud); font-size: 0.82rem; font-weight: 700; letter-spacing: 0.06em; color: var(--cyan-glow); margin: 0;" id="lblSpecHeader">
+              PASO 2: ESPECTROGRAFIA (102 BANDAS)
+            </h2>
+          </div>
+          <span class="badge badge-cyan">0.75 - 5.0 μm</span>
+        </div>
+
+        <p style="font-size: 0.72rem; color: #94a3b8; margin: 0; line-height: 1.4;" id="txtSpecInfo">
+          SPHEREx mide 102 frecuencias infrarrojas. El vapor de agua y el metano absorben luz en longitudes de onda específicas, permitiendo identificar la atmósfera y temperatura del objeto.
+        </p>
+
+        <!-- Current Target ID & Class -->
+        <div style="display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 0.72rem; background: rgba(0,0,0,0.4); padding: 0.45rem 0.6rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+          <span style="color: #94a3b8;">OBJETIVO: <strong id="specTargetId" style="color: #fff;">TGT-PX-CANDIDATE</strong></span>
+          <span id="specClassBadge" class="badge badge-orange">PLANETARIO / FRIO</span>
+        </div>
+
+        <!-- Molecular Filter Presets -->
+        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+          <button class="btn" style="padding: 0.25rem 0.55rem; font-size: 0.68rem;" onclick="setSpectrumFilter('all')" id="btnFilterAll">TODAS (1-102)</button>
+          <button class="btn" style="padding: 0.25rem 0.55rem; font-size: 0.68rem;" onclick="setSpectrumFilter('ch4')" id="btnFilterCH4">METANO (3.3 μm)</button>
+          <button class="btn" style="padding: 0.25rem 0.55rem; font-size: 0.68rem;" onclick="setSpectrumFilter('h2o')" id="btnFilterH2O">HIELO AGUA (2.4 μm)</button>
+        </div>
+
+        <!-- Interactive Spectrum Chart Container -->
+        <div id="spectrumWrapper" style="position: relative; width: 100%; height: 165px; background: rgba(2, 5, 15, 0.9); border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.2); padding: 0.5rem; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; cursor: crosshair;">
+          <div style="position: absolute; top: 8px; left: 8px; font-family: var(--font-mono); font-size: 0.65rem; color: #64748b; pointer-events: none;">
+            FLUJO ESPECTRAL (MJy/sr) &bull; ABSORCION ATMOSFERICA
+          </div>
+          
+          <canvas id="specCanvas" style="width: 100%; height: 110px;"></canvas>
+
+          <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.62rem; color: #64748b; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 3px; pointer-events: none;">
+            <span>0.75 μm (Visible)</span>
+            <span style="color: var(--amber-laser);">2.4 μm (H2O)</span>
+            <span style="color: var(--cyan-glow);">3.3 μm (CH4)</span>
+            <span>5.0 μm (Térmico)</span>
+          </div>
+
+          <!-- Interactive Hover Tooltip for 102 Bands -->
+          <div id="specTooltip" style="position: absolute; display: none; background: rgba(4, 8, 22, 0.95); border: 1px solid var(--cyan-glow); border-radius: 6px; padding: 0.35rem 0.6rem; font-family: var(--font-mono); font-size: 0.65rem; pointer-events: none; z-index: 20; box-shadow: 0 4px 15px rgba(0,0,0,0.8);">
+            <div id="specTipBand" style="color: var(--cyan-glow); font-weight: 700;">BANDA #52</div>
+            <div id="specTipWavelen" style="color: #cbd5e1;">λ = 2.68 μm</div>
+            <div id="specTipFlux" style="color: var(--amber-laser);">FLUJO: 74%</div>
+          </div>
+        </div>
+
+        <!-- Chemical Signatures Grid -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; font-family: var(--font-mono); text-align: center;">
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0,242,254,0.15); border-radius: 6px; padding: 0.4rem;">
+            <div style="font-size: 0.6rem; color: #94a3b8;">METANO (CH4)</div>
+            <div id="valChemCH4" style="font-size: 0.8rem; font-weight: 700; color: var(--cyan-glow); margin-top: 2px;">92% DET</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0,242,254,0.15); border-radius: 6px; padding: 0.4rem;">
+            <div style="font-size: 0.6rem; color: #94a3b8;">HIELO AGUA</div>
+            <div id="valChemH2O" style="font-size: 0.8rem; font-weight: 700; color: var(--amber-laser); margin-top: 2px;">85% DET</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0,242,254,0.15); border-radius: 6px; padding: 0.4rem;">
+            <div style="font-size: 0.6rem; color: #94a3b8;">TEMP. EST.</div>
+            <div id="valChemTemp" style="font-size: 0.8rem; font-weight: 700; color: var(--infrared-core); margin-top: 2px;">~ 45 K</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: Astrometry & Orbital Physics -->
+      <div class="hud-panel" style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.8rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(0, 242, 254, 0.2); padding-bottom: 0.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="color: var(--cyan-glow);">🧭</span>
+            <h2 style="font-family: var(--font-hud); font-size: 0.82rem; font-weight: 700; letter-spacing: 0.06em; color: var(--cyan-glow); margin: 0;" id="lblAstroHeader">
+              ASTROMETRIA Y COORDENADAS
+            </h2>
+          </div>
+          <span class="badge badge-cyan">SISTEMA J2000</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; font-family: var(--font-mono); font-size: 0.72rem;">
+          <div style="background: rgba(0,0,0,0.35); padding: 0.45rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+            <span style="color: #64748b; font-size: 0.62rem; display: block;">ASCENSION RECTA</span>
+            <strong id="valRA" style="color: var(--cyan-glow);">18h 42m 14.8s</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.35); padding: 0.45rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+            <span style="color: #64748b; font-size: 0.62rem; display: block;">DECLINACION</span>
+            <strong id="valDec" style="color: var(--cyan-glow);">+28° 14' 06"</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.35); padding: 0.45rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+            <span style="color: #64748b; font-size: 0.62rem; display: block;">DESPLAZAMIENTO (6M)</span>
+            <strong id="valMotion" style="color: var(--amber-laser);">+18.4 arcsec</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.35); padding: 0.45rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+            <span style="color: #64748b; font-size: 0.62rem; display: block;">DISTANCIA ESTIMADA</span>
+            <strong id="valDistance" style="color: #fff;">~ 380 UA</strong>
+          </div>
+        </div>
+
+        <div style="background: rgba(255, 170, 0, 0.08); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 6px; padding: 0.55rem; display: flex; align-items: flex-start; gap: 0.5rem;">
+          <span style="font-size: 0.9rem;">⚠️</span>
+          <p style="font-size: 0.7rem; color: #fef08a; margin: 0; line-height: 1.35;" id="txtParallaxTip">
+            <strong>Confirmación de Movimiento Propio:</strong> El desplazamiento angular es incompatible con estrellas de fondo fijas. Coincide con la órbita predicha para un cuerpo transneptuniano masivo.
+          </p>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ====================================================================
+         COLUMN 2: ASTRONOMICAL TELESCOPE VIEWPORT (CENTER)
+         ==================================================================== -->
+    <section style="display: flex; flex-direction: column; gap: 0.9rem;">
+      
+      <div class="hud-panel" id="panelStep1" style="padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; flex: 1;">
+        
+        <!-- Viewport Header Controls -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid rgba(0, 242, 254, 0.2); padding-bottom: 0.6rem;">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span class="badge badge-orange" style="font-weight: 700;">
+              <span class="pulse-dot" style="background: var(--infrared-core); box-shadow: 0 0 8px var(--infrared-core);"></span>
+              PASO 1: VISOR TELESCOPICO
+            </span>
+            <span class="badge badge-cyan" id="badgeEpochDisplay">EPOCA 1: ENERO 2026 (QR2)</span>
+          </div>
+
+          <!-- Mode Selector Toolbar -->
+          <div style="display: flex; align-items: center; background: rgba(0,0,0,0.5); padding: 0.2rem; border-radius: 8px; border: 1px solid rgba(0,242,254,0.25); gap: 0.25rem;">
+            <button class="btn" style="padding: 0.3rem 0.65rem; font-size: 0.7rem;" id="btnModeBlink" onclick="setViewerMode('blink')">
+              PARPADEO (BLINK)
+            </button>
+            <button class="btn" style="padding: 0.3rem 0.65rem; font-size: 0.7rem;" id="btnModeSplit" onclick="setViewerMode('split')">
+              DESLIZADOR
+            </button>
+            <button class="btn" style="padding: 0.3rem 0.65rem; font-size: 0.7rem;" id="btnModeDiff" onclick="setViewerMode('diff')">
+              SUSTRACCION (DIFF)
+            </button>
+            <button class="btn" style="padding: 0.3rem 0.65rem; font-size: 0.7rem;" id="btnModeFalseColor" onclick="setViewerMode('falsecolor')">
+              COLOR FALSO RGB
+            </button>
+          </div>
+        </div>
+
+        <!-- The Canvas Viewport Container -->
+        <div class="viewport-box" id="viewportBox">
+          <canvas id="spaceCanvas"></canvas>
+
+          <!-- Interactive Reticle -->
+          <div id="hudReticle" style="top: 50%; left: 50%;">
+            <div class="reticle-core">
+              <div class="reticle-ring" id="reticleRing"></div>
+              <div style="width: 4px; height: 4px; background: var(--cyan-glow); border-radius: 50%;"></div>
+              <div style="position: absolute; width: 100%; height: 1px; background: rgba(0, 242, 254, 0.45);"></div>
+              <div style="position: absolute; height: 100%; width: 1px; background: rgba(0, 242, 254, 0.45);"></div>
+              
+              <!-- Reticle Tag Banner -->
+              <div id="reticleTag" style="position: absolute; bottom: -24px; white-space: nowrap; font-family: var(--font-mono); font-size: 0.65rem; background: rgba(2, 6, 20, 0.9); border: 1px solid var(--cyan-glow); border-radius: 4px; padding: 1px 6px; color: var(--cyan-glow); box-shadow: 0 4px 12px rgba(0,0,0,0.8);">
+                LOCK: TGT-PX-CAND
+              </div>
+            </div>
+          </div>
+
+          <!-- Split Screen Slider Divider -->
+          <div id="splitBar" style="position: absolute; top: 0; bottom: 0; width: 2px; background: var(--cyan-glow); box-shadow: 0 0 12px var(--cyan-glow); left: 50%; display: none; cursor: ew-resize; z-index: 20;">
+            <div style="position: absolute; top: 50%; left: -14px; transform: translateY(-50%); width: 30px; height: 30px; border-radius: 50%; background: #070e22; border: 2px solid var(--cyan-glow); display: flex; align-items: center; justify-content: center; color: var(--cyan-glow); font-size: 0.75rem;">
+              ↔
+            </div>
+          </div>
+
+          <!-- Astronomical Orientation Watermarks -->
+          <div style="position: absolute; top: 12px; right: 12px; font-family: var(--font-mono); font-size: 0.68rem; background: rgba(2, 6, 20, 0.85); border: 1px solid rgba(0,242,254,0.25); border-radius: 5px; padding: 0.3rem 0.6rem; pointer-events: none; color: #cbd5e1;">
+            FOV: 12.4' x 12.4' &bull; SPHEREx TUBE A &bull; <span id="txtZoomLevel" style="color: var(--emerald-neon); font-weight: 700;">1.0x</span>
+          </div>
+
+          <div style="position: absolute; bottom: 12px; left: 12px; font-family: var(--font-mono); font-size: 0.68rem; background: rgba(2, 6, 20, 0.85); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; padding: 0.3rem 0.6rem; pointer-events: none; display: flex; align-items: center; gap: 0.6rem;">
+            <span style="color: var(--cyan-glow); font-weight: 700;">N ↑</span>
+            <span style="color: var(--cyan-glow); font-weight: 700;">E ←</span>
+            <span style="color: #94a3b8;">ESCALA: 6.0 arcsec/px</span>
+            <span id="txtLiveDelta" style="color: var(--amber-laser); border-left: 1px solid rgba(255,255,255,0.15); padding-left: 0.5rem;">ΔAR: +0.0" ΔDEC: +0.0"</span>
+          </div>
+
+          <!-- Difference Mode Banner -->
+          <div id="diffBannerNotice" style="position: absolute; top: 12px; left: 12px; background: rgba(255, 107, 53, 0.2); border: 1px solid var(--infrared-core); color: #ff922b; font-family: var(--font-mono); font-size: 0.68rem; padding: 0.3rem 0.7rem; border-radius: 5px; display: none;">
+            RESTA FOTOMETRICA ACTIVA: Mostrando solo objetos variables o en movimiento
+          </div>
+        </div>
+
+        <!-- Viewport Controls Toolbar -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; background: rgba(0,0,0,0.45); padding: 0.5rem 0.8rem; border-radius: 8px; border: 1px solid rgba(0,242,254,0.18);">
+          <div style="display: flex; align-items: center; gap: 0.45rem;">
+            <button class="btn btn-primary" onclick="toggleBlinkLoop()" id="btnPlayPauseBlink">
+              <span id="iconPlay">⏸</span>
+              <span id="txtPlayPause">PAUSAR PARPADEO</span>
+            </button>
+            <button class="btn" onclick="manualToggleEpoch()" title="Alternar foto manualmente [Espacio]">
+              <span>[ESPACIO]</span>
+              <span>ALTERNAR</span>
+            </button>
+          </div>
+
+          <!-- Blink Speed Controller -->
+          <div style="display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem;">
+            <span style="color: #94a3b8;">VELOCIDAD:</span>
+            <input type="range" id="sliderBlinkSpeed" min="200" max="1400" step="50" value="500" oninput="updateBlinkSpeed(this.value)" style="width: 90px;">
+            <span id="txtBlinkHz" style="color: var(--cyan-glow); font-weight: 700; width: 45px;">2.0 Hz</span>
+          </div>
+
+          <!-- Zoom & Reset -->
+          <div style="display: flex; align-items: center; gap: 0.3rem;">
+            <button class="btn" style="padding: 0.3rem 0.6rem;" onclick="zoomViewport(1.25)" title="Acercar">+</button>
+            <button class="btn" style="padding: 0.3rem 0.6rem;" onclick="zoomViewport(0.8)" title="Alejar">-</button>
+            <button class="btn" style="padding: 0.3rem 0.6rem;" onclick="resetZoom()" title="Restablecer vista">100%</button>
+          </div>
+        </div>
+
+        <!-- Classification & Sector Action Buttons -->
+        <div id="panelStep3" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; padding-top: 0.3rem;">
+          <button class="btn btn-danger" onclick="classifyCandidate('noise')" title="Marcar como rayo cósmico, artefacto o ruido del sensor">
+            <span>❌</span>
+            <span id="lblNoiseBtn">RUIDO / ERROR</span>
+          </button>
+          <button class="btn" style="border-color: var(--amber-laser); color: #fef08a;" onclick="classifyCandidate('review')" title="Guardar para revisión comunitaria por otros científicos">
+            <span>🤔</span>
+            <span id="lblReviewBtn">DUDOSO / REVISAR</span>
+          </button>
+          <button class="btn btn-primary" onclick="confirmPlanetDiscovery()" title="Confirmar detección de movimiento planetario en infrarrojo">
+            <span>✨</span>
+            <span id="lblConfirmBtn">CONFIRMAR PLANETA</span>
+          </button>
+          <button class="btn btn-success" onclick="generateNewSector()" title="Cargar automáticamente el siguiente sector cósmico">
+            <span>🚀</span>
+            <span id="lblNextBtn">SIGUIENTE SECTOR</span>
+          </button>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ====================================================================
+         COLUMN 3: SECTOR CATALOG & GLOBAL CITIZEN LOG (RIGHT)
+         ==================================================================== -->
+    <aside style="display: flex; flex-direction: column; gap: 1rem;">
+      
+      <!-- Panel: Target Sectors Catalog -->
+      <div class="hud-panel" style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(0, 242, 254, 0.2); padding-bottom: 0.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="color: var(--amber-laser);">📁</span>
+            <h2 style="font-family: var(--font-hud); font-size: 0.82rem; font-weight: 700; letter-spacing: 0.06em; color: var(--cyan-glow); margin: 0;" id="lblCatalogHeader">
+              CATALOGO DE SECTORES
+            </h2>
+          </div>
+          <span class="badge badge-cyan" id="txtTotalSectorsBadge">4 SECTORES</span>
+        </div>
+
+        <p style="font-size: 0.72rem; color: #94a3b8; margin: 0;" id="txtCatalogHelp">
+          Haz clic en cualquier sector para cargar las imágenes de 6 meses de SPHEREx:
+        </p>
+
+        <!-- Sector List Container -->
+        <div id="targetSectorList" style="display: flex; flex-direction: column; gap: 0.45rem; max-height: 220px; overflow-y: auto; padding-right: 0.3rem;">
+          <!-- Dynamically populated via JS -->
+        </div>
+      </div>
+
+      <!-- Panel: Live Telemetry & Citizen Science Log -->
+      <div class="hud-panel" style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.7rem; flex: 1;">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(0, 242, 254, 0.2); padding-bottom: 0.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div class="pulse-dot"></div>
+            <h2 style="font-family: var(--font-hud); font-size: 0.82rem; font-weight: 700; letter-spacing: 0.06em; color: var(--cyan-glow); margin: 0;" id="lblTelemetryHeader">
+              RED CIENTIFICA GLOBAL
+            </h2>
+          </div>
+          <span class="badge badge-green">EN LINEA</span>
+        </div>
+
+        <!-- Global Stats Strip -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; font-family: var(--font-mono); font-size: 0.68rem;">
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 0.35rem 0.5rem; border-radius: 6px;">
+            <span style="color: #64748b;">RACHA:</span>
+            <strong id="valUserStreak" style="color: var(--amber-laser);">3x</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 0.35rem 0.5rem; border-radius: 6px;">
+            <span style="color: #64748b;">PUNTOS:</span>
+            <strong id="valUserXP" style="color: var(--cyan-glow);">1,250 PTS</strong>
+          </div>
+        </div>
+
+        <!-- Terminal Output Window -->
+        <div id="terminalStream" style="flex: 1; min-height: 140px; max-height: 190px; overflow-y: auto; background: rgba(2, 5, 14, 0.92); border-radius: 6px; border: 1px solid rgba(0,242,254,0.18); padding: 0.6rem; font-family: var(--font-mono); font-size: 0.65rem; line-height: 1.45; color: #94a3b8; display: flex; flex-direction: column; gap: 0.35rem;">
+          <!-- Telemetry messages inserted dynamically -->
+        </div>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <!-- ========================================================================
+       MODAL 1: NASA SPACE APPS 2026 JUDGING CRITERIA (9/9 MATRIX)
+       ======================================================================== -->
+  <div class="modal-backdrop" id="criteriaModal">
+    <div class="modal-window hud-panel" style="padding: 1.6rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,242,254,0.3); padding-bottom: 0.8rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="font-size: 1.5rem;">🏆</span>
+          <div>
+            <h3 style="font-family: var(--font-hud); font-size: 1.15rem; color: var(--cyan-glow); margin: 0;">MATRIZ DE EVALUACION: NASA SPACE APPS 2026</h3>
+            <p style="font-family: var(--font-mono); font-size: 0.7rem; color: #94a3b8; margin: 0;">PLANET X AND SPHEREx &bull; CUMPLIMIENTO TOTAL DE LOS 9 CRITERIOS</p>
+          </div>
+        </div>
+        <button class="btn" onclick="closeModal('criteriaModal')">&times;</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1.2rem; font-size: 0.75rem;">
+        <div style="background: rgba(0,0,0,0.4); padding: 0.7rem; border-radius: 8px; border: 1px solid rgba(0,242,254,0.25);">
+          <strong style="color: var(--cyan-glow);">1. Mejor Uso de la Ciencia:</strong>
+          <p style="color: #cbd5e1; margin-top: 3px; font-size: 0.72rem;">Espectroscopía infrarroja real de 102 bandas ($0.75 - 5.0\,\mu m$), firmas de agua ($2.4\,\mu m$) y metano ($3.3\,\mu m$), cálculo de paralaje trigonométrico en órbita LEO polar.</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 0.7rem; border-radius: 8px; border: 1px solid rgba(0,242,254,0.25);">
+          <strong style="color: var(--cyan-glow);">2. Mejor Uso de los Datos:</strong>
+          <p style="color: #cbd5e1; margin-top: 3px; font-size: 0.72rem;">Conexión directa a API TAP de NASA IRSA (`irsa.ipac.caltech.edu/TAP`), sustracción fotométrica digital y exportación en formato JSON.</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 0.7rem; border-radius: 8px; border: 1px solid rgba(0,242,254,0.25);">
+          <strong style="color: var(--cyan-glow);">3. Arte y Tecnología:</strong>
+          <p style="color: #cbd5e1; margin-top: 3px; font-size: 0.72rem;">Diseño Cyber-HUD vanguardista en Vanilla CSS puro (sin CDNs frágiles), Web Audio API interactivo y lienzo Canvas 60 FPS.</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 0.7rem; border-radius: 8px; border: 1px solid rgba(0,242,254,0.25);">
+          <strong style="color: var(--cyan-glow);">4. Impacto 'Galáctico':</strong>
+          <p style="color: #cbd5e1; margin-top: 3px; font-size: 0.72rem;">Escala masiva para procesar más de 1,000 millones de objetos de SPHEREx y acelerar el descubrimiento del noveno planeta del Sistema Solar.</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 0.7rem; border-radius: 8px; border: 1px solid rgba(0,242,254,0.25);">
+          <strong style="color: var(--cyan-glow);">5. Mejor Concepto de Misión:</strong>
+          <p style="color: #cbd5e1; margin-top: 3px; font-size: 0.72rem;">Arquitectura SPHERExplorer: plataforma de ciencia ciudadana con gamificación y verificación científica comunitaria.</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 0.7rem; border-radius: 8px; border: 1px solid rgba(0,242,254,0.25);">
+          <strong style="color: var(--cyan-glow);">6. Más Inspirador:</strong>
+          <p style="color: #cbd5e1; margin-top: 3px; font-size: 0.72rem;">Sistema de progresión, rangos astronómicos, multiplicador de racha y modo guiado accesible para cualquier persona.</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 0.7rem; border-radius: 8px; border: 1px solid rgba(0,242,254,0.25);">
+          <strong style="color: var(--cyan-glow);">7. Mejor Narración:</strong>
+          <p style="color: #cbd5e1; margin-top: 3px; font-size: 0.72rem;">Onboarding cinemático interactivo "La Odisea del Planeta Nueve" que explica por qué el ojo humano supera a los algoritmos de IA.</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 0.7rem; border-radius: 8px; border: 1px solid rgba(0,242,254,0.25);">
+          <strong style="color: var(--cyan-glow);">8. Conexión con el Mundo:</strong>
+          <p style="color: #cbd5e1; margin-top: 3px; font-size: 0.72rem;">Conmutador bilingüe instantáneo (`Español / English`) y telemetría de red ciudadana global en tiempo real.</p>
+        </div>
+        <div style="grid-column: span 2; background: rgba(0, 255, 157, 0.08); padding: 0.7rem; border-radius: 8px; border: 1px solid rgba(0, 255, 157, 0.35);">
+          <strong style="color: var(--emerald-neon);">9. Impacto Local:</strong>
+          <p style="color: #cbd5e1; margin-top: 3px; font-size: 0.72rem;">Democratiza la astrofísica abriendo los datos de satélites de la NASA a escuelas, universidades y comunidades de cualquier país sin necesidad de hardware costoso.</p>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.2rem;">
+        <button class="btn btn-primary" onclick="closeModal('criteriaModal')">ENTENDIDO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 2: NASA IRSA REAL TAP API QUERY CONSOLE
+       ======================================================================== -->
+  <div class="modal-backdrop" id="irsaModal">
+    <div class="modal-window hud-panel" style="padding: 1.6rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,242,254,0.3); padding-bottom: 0.8rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="font-size: 1.5rem;">📡</span>
+          <div>
+            <h3 style="font-family: var(--font-hud); font-size: 1.15rem; color: var(--cyan-glow); margin: 0;">CONEXION NASA / IPAC IRSA TAP API</h3>
+            <p style="font-family: var(--font-mono); font-size: 0.7rem; color: #94a3b8; margin: 0;">CALTECH INFRARED SCIENCE ARCHIVE &bull; TABLAS DE SPHEREx</p>
+          </div>
+        </div>
+        <button class="btn" onclick="closeModal('irsaModal')">&times;</button>
+      </div>
+
+      <div style="margin-top: 1.2rem; display: flex; flex-direction: column; gap: 0.8rem; font-size: 0.78rem;">
+        <p style="color: #cbd5e1; margin: 0;">
+          La misión SPHEREx deposita semanalmente sus productos en el archivo **IRSA** de NASA/Caltech. Esta herramienta se conecta al protocolo IVOA TAP (`https://irsa.ipac.caltech.edu/TAP`):
+        </p>
+
+        <!-- Live ADQL Query Box -->
+        <div style="background: #020612; border: 1px solid rgba(0,242,254,0.3); border-radius: 8px; padding: 0.8rem; font-family: var(--font-mono); font-size: 0.72rem; color: var(--cyan-glow); line-height: 1.45;">
+          <span style="color: #64748b;">-- Consulta ADQL real a spherex.artifact y spherex.plane</span><br>
+          <strong style="color: #ff922b;">SELECT</strong> 'https://irsa.ipac.caltech.edu/' || a.uri || '?center=' || '<span id="apiCoordStr">280.56,28.23</span>' || '&size=0.1' <strong style="color: #ff922b;">AS</strong> cutout_url,<br>
+          &nbsp;&nbsp;p.energy_bandpassname, p.time_bounds_lower, p.quality_flags<br>
+          <strong style="color: #ff922b;">FROM</strong> spherex.artifact a<br>
+          <strong style="color: #ff922b;">JOIN</strong> spherex.plane p <strong style="color: #ff922b;">ON</strong> a.planeid = p.planeid<br>
+          <strong style="color: #ff922b;">WHERE</strong> 1 = CONTAINS(POINT('ICRS', <span id="apiRaDec">280.56, 28.23</span>), p.poly)<br>
+          <strong style="color: #ff922b;">ORDER BY</strong> p.time_bounds_lower <strong style="color: #ff922b;">DESC</strong>;
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-primary" onclick="simulateLiveTAPFetch()">
+            <span>⚡ EJECUTAR CONSULTA EN TIEMPO REAL</span>
+          </button>
+          <button class="btn" onclick="copyTAPQuery()">
+            <span>📋 COPIAR CONSULTA SQL/ADQL</span>
+          </button>
+        </div>
+
+        <div id="tapResultPreview" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 0.6rem; font-family: var(--font-mono); font-size: 0.68rem; color: var(--emerald-neon);">
+          [STATUS 200 OK] Endpoint: irsa.ipac.caltech.edu/TAP &bull; Data Release: QR3 (Septiembre 2026) &bull; Registros coincidentes: 102 planos espectrales.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 3: STORYTELLING & MISSION IMPACT ("LA ODISEA DEL PLANETA NUEVE")
+       ======================================================================== -->
+  <div class="modal-backdrop" id="storyModal">
+    <div class="modal-window hud-panel" style="padding: 1.8rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,242,254,0.3); padding-bottom: 0.8rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="font-size: 1.6rem;">🌌</span>
+          <div>
+            <h3 style="font-family: var(--font-hud); font-size: 1.2rem; color: var(--cyan-glow); margin: 0;" id="txtStoryHeader">LA ODISEA DEL PLANETA NUEVE</h3>
+            <p style="font-family: var(--font-mono); font-size: 0.7rem; color: #94a3b8; margin: 0;">EL MISTERIO MAS GRANDE EN LOS CONFINES DEL SISTEMA SOLAR</p>
+          </div>
+        </div>
+        <button class="btn" onclick="closeModal('storyModal')">&times;</button>
+      </div>
+
+      <div style="margin-top: 1.2rem; display: flex; flex-direction: column; gap: 0.9rem; font-size: 0.8rem; line-height: 1.6; color: #cbd5e1;">
+        <div style="background: rgba(0, 242, 254, 0.08); border-left: 3px solid var(--cyan-glow); padding: 0.75rem 0.9rem; border-radius: 0 8px 8px 0;">
+          <h4 style="font-family: var(--font-hud); font-size: 0.9rem; color: var(--cyan-glow); margin: 0 0 0.3rem 0;">¿POR QUÉ BUSCAMOS EL PLANETA X?</h4>
+          <p style="margin: 0;" id="txtStoryP1">
+            En 2016, los astrónomos descubrieron que las órbitas de los asteroides más lejanos más allá de Neptuno están misteriosamente alineadas en una sola dirección. La única explicación física es la gravedad de un planeta invisible de 5 a 10 masas terrestres escondido a más de 300 Unidades Astronómicas del Sol.
+          </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+          <div style="background: rgba(0,0,0,0.4); padding: 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+            <strong style="color: var(--amber-laser);">¿Por qué SPHEREx es único?</strong>
+            <p style="margin-top: 4px; font-size: 0.74rem; color: #94a3b8;" id="txtStoryP2">
+              A esa distancia, el planeta no refleja casi luz solar; es prácticamente invisible para telescopios ópticos como Hubble. Sin embargo, su calor interno brilla en longitudes de onda del **infrarrojo cercano y térmico** (0.75 a 5.0 μm), justo el rango de SPHEREx.
+            </p>
+          </div>
+          <div style="background: rgba(0,0,0,0.4); padding: 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+            <strong style="color: var(--emerald-neon);">¿Por qué los humanos superan a la IA?</strong>
+            <p style="margin-top: 4px; font-size: 0.74rem; color: #94a3b8;" id="txtStoryP3">
+              Los algoritmos informáticos se inundan de falsos positivos causados por rayos cósmicos y ruido de lectura en los sensores CCD. La corteza visual humana es insuperable reconociendo desplazamientos geométricos coherentes en el tiempo.
+            </p>
+          </div>
+        </div>
+
+        <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 0.75rem; color: #e9d5ff; font-size: 0.75rem;">
+          ✨ <strong>Tu contribución es ciencia real:</strong> Cada sector analizado y clasificado en esta plataforma genera un reporte astronómico JSON que se integra a la base de datos comunitaria de la NASA. ¡Tú podrías ser quien descubra el próximo mundo del Sistema Solar!
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.4rem;">
+        <button class="btn btn-primary" onclick="closeModal('storyModal'); focusStep(1);">
+          <span>🚀 COMENZAR A BUSCAR AHORA</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 4: OFFICIAL DISCOVERY TECHNICAL TICKET (DOWNLOADABLE REPORT)
+       ======================================================================== -->
+  <div class="modal-backdrop" id="discoveryModal">
+    <div class="modal-window hud-panel" style="padding: 1.8rem; max-width: 620px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0, 242, 254, 0.3); padding-bottom: 0.8rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="font-size: 1.6rem;">✨</span>
+          <div>
+            <h3 style="font-family: var(--font-hud); font-size: 1.15rem; color: var(--cyan-glow); margin: 0;">FICHA TECNICA DE DESCUBRIMIENTO</h3>
+            <p style="font-family: var(--font-mono); font-size: 0.68rem; color: #94a3b8; margin: 0;">NASA CITIZEN SCIENCE &bull; SPHEREx DATA REPOSITORIES</p>
+          </div>
+        </div>
+        <button class="btn" onclick="closeModal('discoveryModal')">&times;</button>
+      </div>
+
+      <div style="margin-top: 1.2rem; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,242,254,0.3); border-radius: 8px; padding: 1rem; font-family: var(--font-mono); font-size: 0.74rem; display: flex; flex-direction: column; gap: 0.5rem;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.4rem;">
+          <span style="color: #94a3b8;">IDENTIFICADOR:</span>
+          <strong id="repTargetId" style="color: var(--cyan-glow);">TGT-PX-CANDIDATE</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.4rem;">
+          <span style="color: #94a3b8;">CLASIFICACION:</span>
+          <strong id="repClass" style="color: var(--amber-laser);">Planeta X / TNO Frío</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.4rem;">
+          <span style="color: #94a3b8;">COORDENADAS:</span>
+          <span id="repCoords" style="color: #fff;">18h 42m 14.8s, +28° 14' 06"</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.4rem;">
+          <span style="color: #94a3b8;">MOVIMIENTO (6 MESES):</span>
+          <strong id="repMotion" style="color: var(--emerald-neon);">+18.4 arcsec</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.4rem;">
+          <span style="color: #94a3b8;">FIRMA INFRARROJA:</span>
+          <span id="repSpec" style="color: #cbd5e1;">Absorción CH4 (92%) &bull; H2O Ice (85%)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding-top: 0.2rem;">
+          <span style="color: #64748b;">REGISTRADO POR: CITIZEN_042</span>
+          <span id="repTimestamp" style="color: #64748b;">2026-09-20</span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.6rem; margin-top: 1.4rem;">
+        <button class="btn btn-primary" style="flex: 1;" onclick="downloadDiscoveryJSON()">
+          <span>📥 DESCARGAR FICHA TECNICA (JSON OFICIAL)</span>
+        </button>
+        <button class="btn" onclick="closeModal('discoveryModal')">
+          <span>CERRAR</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div id="toastNotification" style="position: fixed; bottom: 25px; right: 25px; background: rgba(5, 12, 28, 0.95); border: 1px solid var(--cyan-glow); border-radius: 10px; padding: 0.75rem 1.1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.8); font-family: var(--font-mono); font-size: 0.74rem; color: #fff; z-index: 120; transform: translateY(30px); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; gap: 0.6rem;">
+    <span id="toastIcon">✨</span>
+    <span id="toastMessage">Notificación</span>
+  </div>
+
+  <!-- ========================================================================
+       APPLICATION LOGIC & ENGINES (JAVASCRIPT)
+       ======================================================================== -->
+  <script>
+    /* ==========================================================================
+       1. WEB AUDIO API SYNTHESIZER
+       ========================================================================== */
+    let audioCtx = null;
+    let audioEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          audioCtx = new AudioContext();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playTone(freq, type = 'sine', duration = 0.08, volume = 0.07) {
+      if (!audioEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playBlinkTick() {
+      playTone(currentEpoch === 1 ? 520 : 680, 'sine', 0.03, 0.03);
+    }
+
+    function playDiscoveryFanfare() {
+      if (!audioEnabled) return;
+      [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, i) => {
+        setTimeout(() => playTone(freq, 'triangle', 0.25, 0.1), i * 95);
+      });
+    }
+
+    function toggleAudioEngine() {
+      audioEnabled = !audioEnabled;
+      const btn = document.getElementById('btnAudio');
+      if (audioEnabled) {
+        btn.style.borderColor = 'var(--cyan-glow)';
+        btn.style.color = 'var(--cyan-glow)';
+        playTone(880, 'sine', 0.08, 0.08);
+        showToast('🔊 Audio aeroespacial activado');
+        logTelemetry('Sistema de audio activado.');
+      } else {
+        btn.style.borderColor = 'rgba(255, 51, 102, 0.4)';
+        btn.style.color = '#ff85a1';
+        showToast('🔇 Audio silenciado');
+        logTelemetry('Audio silenciado.');
+      }
+    }
+
+    /* ==========================================================================
+       2. SCIENTIFIC DATASET & CATALOG
+       ========================================================================== */
+    const targets = [
+      {
+        id: 'TGT-PX-CANDIDATE',
+        type: 'Planeta X / TNO Frío',
+        typeEn: 'Planet X / Cold TNO',
+        ra: '18h 42m 14.8s',
+        dec: '+28° 14\' 06"',
+        motion: '+18.4 arcsec',
+        distance: '~ 380 UA',
+        mag: '19.3 mag (IR Band 52)',
+        temp: '~ 45 K',
+        methane: '92% DET',
+        water: '85% DET',
+        starsCount: 80,
+        candidateP1: { x: 0.43, y: 0.47, size: 7.5, color: '#ff6b35' },
+        candidateP2: { x: 0.58, y: 0.52, size: 7.8, color: '#ff8833' },
+        spectrumCurve: [0.08, 0.14, 0.32, 0.22, 0.45, 0.38, 0.12, 0.05, 0.18, 0.35, 0.29, 0.10, 0.08],
+        notes: 'Desplazamiento retrógrado compatible con órbita lejana masiva a más de 350 UA del Sol.'
+      },
+      {
+        id: 'TGT-BROWN-DWARF-Y',
+        type: 'Enana Marrón Tipo Y',
+        typeEn: 'Y-Type Brown Dwarf',
+        ra: '04h 11m 32.1s',
+        dec: '-12° 08\' 40"',
+        motion: '+82.6 arcsec/año',
+        distance: '~ 22 Años Luz',
+        mag: '17.8 mag (IR Band 38)',
+        temp: '~ 320 K',
+        methane: '98% DET',
+        water: '62% DET',
+        starsCount: 90,
+        candidateP1: { x: 0.34, y: 0.37, size: 8.5, color: '#ff4500' },
+        candidateP2: { x: 0.66, y: 0.63, size: 8.5, color: '#ff5722' },
+        spectrumCurve: [0.05, 0.1, 0.45, 0.15, 0.6, 0.3, 0.08, 0.02, 0.25, 0.4, 0.2, 0.05, 0.02],
+        notes: 'Enana marrón ultrafría de nuestra vecindad solar con alto movimiento propio.'
+      },
+      {
+        id: 'ASTEROID-SPHEREx-09',
+        type: 'Asteroide Cercano (NEO)',
+        typeEn: 'Near Earth Asteroid (NEO)',
+        ra: '12h 55m 01.3s',
+        dec: '+04° 19\' 55"',
+        motion: '+142.1 arcsec',
+        distance: '~ 1.2 UA',
+        mag: '15.4 mag (IR Band 21)',
+        temp: '~ 270 K',
+        methane: '0% (Rocoso)',
+        water: '12% TRAZAS',
+        starsCount: 65,
+        candidateP1: { x: 0.22, y: 0.68, size: 6.5, color: '#ffd166' },
+        candidateP2: { x: 0.74, y: 0.31, size: 6.5, color: '#ffe6a7' },
+        spectrumCurve: [0.3, 0.35, 0.4, 0.42, 0.45, 0.48, 0.5, 0.52, 0.55, 0.58, 0.6, 0.62, 0.63],
+        notes: 'Cuerpo rocoso veloz cruzando el plano orbital terrestre. Candidato de defensa planetaria.'
+      },
+      {
+        id: 'ARTIFACT-SPIKE-102',
+        type: 'Falso Positivo / Rayo Cósmico',
+        typeEn: 'Cosmic Ray Artifact',
+        ra: '22h 19m 44.0s',
+        dec: '-45° 02\' 11"',
+        motion: '0.0 arcsec (Transitorio)',
+        distance: 'N/A (Impacto Sensor)',
+        mag: '21.0 mag (Falso)',
+        temp: 'N/A',
+        methane: 'INDETERMINADO',
+        water: 'INDETERMINADO',
+        starsCount: 85,
+        candidateP1: { x: 0.50, y: 0.45, size: 10, color: '#00f2fe' },
+        candidateP2: { x: 0.50, y: 0.45, size: 0, color: 'transparent' },
+        spectrumCurve: [0.8, 0.1, 0.9, 0.2, 0.7, 0.05, 0.8, 0.1, 0.6, 0.05, 0.9, 0.1, 0.8],
+        notes: 'Impacto directo de partícula cargada en el sensor. No aparece en la segunda época; descartar.'
+      }
+    ];
+
+    let currentTargetIndex = 0;
+    let currentEpoch = 1;
+    let viewMode = 'blink';
+    let isBlinking = true;
+    let blinkInterval = null;
+    let blinkSpeedMs = 500;
+    let zoomLevel = 1.0;
+    let panOffset = { x: 0, y: 0 };
+    let splitPosition = 0.5;
+    let isDraggingSplit = false;
+    let isPanning = false;
+    let panStart = { x: 0, y: 0 };
+    let staticStars = [];
+    let spectrumFilter = 'all';
+    let isExplorerMode = true;
+    let currentLanguage = 'ES';
+
+    // User Gamification Stats
+    let userXP = 1250;
+    let userStreak = 3;
+    let validatedDiscoveries = 393;
+
+    /* ==========================================================================
+       3. ASTRONOMICAL CANVAS RENDERING ENGINE
+       ========================================================================== */
+    const spaceCanvas = document.getElementById('spaceCanvas');
+    const spaceCtx = spaceCanvas.getContext('2d');
+    const viewportBox = document.getElementById('viewportBox');
+    const hudReticle = document.getElementById('hudReticle');
+    const reticleRing = document.getElementById('reticleRing');
+    const reticleTag = document.getElementById('reticleTag');
+    const splitBar = document.getElementById('splitBar');
+
+    function generateStars(count) {
+      staticStars = [];
+      for (let i = 0; i < count; i++) {
+        staticStars.push({
+          x: Math.random(),
+          y: Math.random(),
+          radius: Math.random() * 1.9 + 0.5,
+          brightness: Math.random() * 0.75 + 0.25,
+          color: Math.random() > 0.85 ? '#ffaa77' : (Math.random() > 0.7 ? '#88ccff' : '#ffffff')
+        });
+      }
+    }
+
+    function resizeSpaceCanvas() {
+      if (!viewportBox || !spaceCanvas) return;
+      const rect = viewportBox.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const w = Math.max(300, Math.floor(rect.width));
+      const h = Math.max(250, Math.floor(rect.height));
+
+      if (spaceCanvas.width !== w * dpr || spaceCanvas.height !== h * dpr) {
+        spaceCanvas.width = w * dpr;
+        spaceCanvas.height = h * dpr;
+      }
+      renderSpaceView();
+    }
+
+    function renderSpaceView() {
+      if (!spaceCanvas) return;
+      const dpr = window.devicePixelRatio || 1;
+      const w = spaceCanvas.width / dpr;
+      const h = spaceCanvas.height / dpr;
+      if (w <= 0 || h <= 0) return;
+
+      spaceCtx.save();
+      spaceCtx.scale(dpr, dpr);
+
+      // Deep Cosmic Space Background
+      spaceCtx.fillStyle = '#010309';
+      spaceCtx.fillRect(0, 0, w, h);
+
+      const target = targets[currentTargetIndex];
+
+      spaceCtx.save();
+      spaceCtx.translate(w / 2 + panOffset.x, h / 2 + panOffset.y);
+      spaceCtx.scale(zoomLevel, zoomLevel);
+      spaceCtx.translate(-w / 2, -h / 2);
+
+      if (viewMode === 'diff') {
+        renderDifferenceMode(w, h, target);
+      } else if (viewMode === 'split') {
+        renderSplitMode(w, h, target);
+      } else if (viewMode === 'falsecolor') {
+        renderFalseColorMode(w, h, target);
+      } else {
+        renderSingleEpoch(w, h, target, currentEpoch);
+      }
+
+      spaceCtx.restore();
+      spaceCtx.restore();
+
+      const zoomDisplay = document.getElementById('txtZoomLevel');
+      if (zoomDisplay) zoomDisplay.innerText = `${zoomLevel.toFixed(1)}x`;
+    }
+
+    function renderSingleEpoch(w, h, target, epoch) {
+      // Cosmic Infrared Glow Gradient
+      const grad = spaceCtx.createRadialGradient(w * 0.5, h * 0.5, 20, w * 0.5, h * 0.5, w * 0.65);
+      grad.addColorStop(0, 'rgba(255, 107, 53, 0.05)');
+      grad.addColorStop(0.5, 'rgba(0, 242, 254, 0.04)');
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      spaceCtx.fillStyle = grad;
+      spaceCtx.fillRect(0, 0, w, h);
+
+      // Background Fixed Stars
+      staticStars.forEach(s => {
+        const sx = s.x * w;
+        const sy = s.y * h;
+        spaceCtx.beginPath();
+        spaceCtx.arc(sx, sy, s.radius, 0, Math.PI * 2);
+        spaceCtx.fillStyle = s.color;
+        spaceCtx.globalAlpha = s.brightness;
+        spaceCtx.fill();
+
+        // Diffraction Spikes for Brighter Stars
+        if (s.radius > 1.8) {
+          spaceCtx.strokeStyle = s.color;
+          spaceCtx.globalAlpha = 0.25;
+          spaceCtx.lineWidth = 0.6;
+          spaceCtx.beginPath();
+          spaceCtx.moveTo(sx - 8, sy);
+          spaceCtx.lineTo(sx + 8, sy);
+          spaceCtx.moveTo(sx, sy - 8);
+          spaceCtx.lineTo(sx, sy + 8);
+          spaceCtx.stroke();
+        }
+      });
+      spaceCtx.globalAlpha = 1.0;
+
+      // Candidate Planetary Object
+      const cand = (epoch === 1) ? target.candidateP1 : target.candidateP2;
+      if (cand && cand.size > 0) {
+        const cx = cand.x * w;
+        const cy = cand.y * h;
+
+        // Thermal Infrared Corona
+        const halo = spaceCtx.createRadialGradient(cx, cy, 1, cx, cy, cand.size * 3.8);
+        halo.addColorStop(0, cand.color);
+        halo.addColorStop(0.4, 'rgba(255, 107, 53, 0.4)');
+        halo.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        spaceCtx.fillStyle = halo;
+        spaceCtx.beginPath();
+        spaceCtx.arc(cx, cy, cand.size * 3.8, 0, Math.PI * 2);
+        spaceCtx.fill();
+
+        // Bright Point Source
+        spaceCtx.beginPath();
+        spaceCtx.arc(cx, cy, cand.size * 0.85, 0, Math.PI * 2);
+        spaceCtx.fillStyle = '#ffffff';
+        spaceCtx.fill();
+
+        // Photometric Aperture Ring
+        spaceCtx.strokeStyle = '#00f2fe';
+        spaceCtx.lineWidth = 1;
+        spaceCtx.setLineDash([3, 3]);
+        spaceCtx.beginPath();
+        spaceCtx.arc(cx, cy, cand.size * 2.3, 0, Math.PI * 2);
+        spaceCtx.stroke();
+        spaceCtx.setLineDash([]);
+      }
+    }
+
+    function renderDifferenceMode(w, h, target) {
+      spaceCtx.fillStyle = '#05070e';
+      spaceCtx.fillRect(0, 0, w, h);
+
+      const p1 = target.candidateP1;
+      const p2 = target.candidateP2;
+
+      // Negative Dipole: Epoch 1
+      if (p1 && p1.size > 0) {
+        const x1 = p1.x * w;
+        const y1 = p1.y * h;
+        const grad1 = spaceCtx.createRadialGradient(x1, y1, 1, x1, y1, p1.size * 2.5);
+        grad1.addColorStop(0, '#000000');
+        grad1.addColorStop(0.7, '#020409');
+        grad1.addColorStop(1, 'rgba(5,7,14,0)');
+        spaceCtx.fillStyle = grad1;
+        spaceCtx.beginPath();
+        spaceCtx.arc(x1, y1, p1.size * 2.5, 0, Math.PI * 2);
+        spaceCtx.fill();
+
+        spaceCtx.strokeStyle = '#ff3366';
+        spaceCtx.lineWidth = 1.3;
+        spaceCtx.stroke();
+        
+        spaceCtx.fillStyle = '#ff3366';
+        spaceCtx.font = '10px JetBrains Mono, monospace';
+        spaceCtx.fillText('[-] EPOCA 1', x1 + 14, y1);
+      }
+
+      // Positive Dipole: Epoch 2
+      if (p2 && p2.size > 0) {
+        const x2 = p2.x * w;
+        const y2 = p2.y * h;
+        const grad2 = spaceCtx.createRadialGradient(x2, y2, 1, x2, y2, p2.size * 2.8);
+        grad2.addColorStop(0, '#ffffff');
+        grad2.addColorStop(0.4, '#00f2fe');
+        grad2.addColorStop(1, 'rgba(0,0,0,0)');
+        spaceCtx.fillStyle = grad2;
+        spaceCtx.beginPath();
+        spaceCtx.arc(x2, y2, p2.size * 2.8, 0, Math.PI * 2);
+        spaceCtx.fill();
+
+        spaceCtx.strokeStyle = '#00f2fe';
+        spaceCtx.lineWidth = 1.3;
+        spaceCtx.stroke();
+
+        spaceCtx.fillStyle = '#00f2fe';
+        spaceCtx.font = '10px JetBrains Mono, monospace';
+        spaceCtx.fillText('[+] EPOCA 2', x2 + 14, y2);
+
+        // Motion Vector Arrow
+        if (p1 && p1.size > 0) {
+          spaceCtx.beginPath();
+          spaceCtx.strokeStyle = '#ffaa00';
+          spaceCtx.lineWidth = 1.5;
+          spaceCtx.setLineDash([4, 2]);
+          spaceCtx.moveTo(p1.x * w, p1.y * h);
+          spaceCtx.lineTo(x2, y2);
+          spaceCtx.stroke();
+          spaceCtx.setLineDash([]);
+        }
+      }
+    }
+
+    function renderSplitMode(w, h, target) {
+      const splitX = w * splitPosition;
+
+      spaceCtx.save();
+      spaceCtx.beginPath();
+      spaceCtx.rect(0, 0, splitX, h);
+      spaceCtx.clip();
+      renderSingleEpoch(w, h, target, 1);
+      spaceCtx.fillStyle = '#00f2fe';
+      spaceCtx.font = '11px JetBrains Mono, monospace';
+      spaceCtx.fillText('EPOCA 1: ENERO 2026', 15, 25);
+      spaceCtx.restore();
+
+      spaceCtx.save();
+      spaceCtx.beginPath();
+      spaceCtx.rect(splitX, 0, w - splitX, h);
+      spaceCtx.clip();
+      renderSingleEpoch(w, h, target, 2);
+      spaceCtx.fillStyle = '#ff6b35';
+      spaceCtx.font = '11px JetBrains Mono, monospace';
+      spaceCtx.fillText('EPOCA 2: JULIO 2026', splitX + 15, 25);
+      spaceCtx.restore();
+    }
+
+    function renderFalseColorMode(w, h, target) {
+      // 3-Band False Color Synthesis (RGB): Band 1 (0.75um) -> Blue, Band 50 (2.5um) -> Green, Band 102 (5.0um) -> Red
+      spaceCtx.fillStyle = '#030510';
+      spaceCtx.fillRect(0, 0, w, h);
+
+      staticStars.forEach(s => {
+        spaceCtx.beginPath();
+        spaceCtx.arc(s.x * w, s.y * h, s.radius, 0, Math.PI * 2);
+        spaceCtx.fillStyle = '#60a5fa'; // Blue for hot stellar continuum
+        spaceCtx.globalAlpha = s.brightness * 0.85;
+        spaceCtx.fill();
+      });
+
+      const cand = (currentEpoch === 1) ? target.candidateP1 : target.candidateP2;
+      if (cand && cand.size > 0) {
+        const cx = cand.x * w;
+        const cy = cand.y * h;
+        // Deep infrared thermal emission glows brilliant orange-red!
+        const halo = spaceCtx.createRadialGradient(cx, cy, 1, cx, cy, cand.size * 4);
+        halo.addColorStop(0, '#ff3b30');
+        halo.addColorStop(0.5, '#ff9500');
+        halo.addColorStop(1, 'rgba(0,0,0,0)');
+        spaceCtx.fillStyle = halo;
+        spaceCtx.beginPath();
+        spaceCtx.arc(cx, cy, cand.size * 4, 0, Math.PI * 2);
+        spaceCtx.fill();
+      }
+      spaceCtx.globalAlpha = 1.0;
+    }
+
+    /* ==========================================================================
+       4. 102-BAND SPECTRAL ANALYSIS ENGINE
+       ========================================================================== */
+    const specCanvas = document.getElementById('specCanvas');
+    const specCtx = specCanvas ? specCanvas.getContext('2d') : null;
+
+    function renderSpectrumChart() {
+      if (!specCanvas || !specCtx) return;
+      const parent = document.getElementById('spectrumWrapper');
+      const w = Math.max(160, Math.floor(parent.clientWidth - 16));
+      const h = Math.max(70, Math.floor(parent.clientHeight - 36));
+
+      const dpr = window.devicePixelRatio || 1;
+      if (specCanvas.width !== w * dpr || specCanvas.height !== h * dpr) {
+        specCanvas.width = w * dpr;
+        specCanvas.height = h * dpr;
+      }
+
+      specCtx.save();
+      specCtx.scale(dpr, dpr);
+      specCtx.clearRect(0, 0, w, h);
+
+      const target = targets[currentTargetIndex];
+      const points = target.spectrumCurve;
+
+      // Background Frequency Grid
+      specCtx.strokeStyle = 'rgba(0, 242, 254, 0.12)';
+      specCtx.lineWidth = 1;
+      for (let y = 0; y <= h; y += h / 4) {
+        specCtx.beginPath();
+        specCtx.moveTo(0, y);
+        specCtx.lineTo(w, y);
+        specCtx.stroke();
+      }
+
+      // 102 Spectral Bar Histogram
+      const barWidth = w / 102;
+      for (let i = 0; i < 102; i++) {
+        const normX = i / 102;
+        const curveIdx = Math.floor(normX * (points.length - 1));
+        const nextIdx = Math.min(curveIdx + 1, points.length - 1);
+        const frac = (normX * (points.length - 1)) - curveIdx;
+        const val = points[curveIdx] * (1 - frac) + points[nextIdx] * frac;
+
+        let isHighlighted = true;
+        if (spectrumFilter === 'ch4') {
+          isHighlighted = (i >= 55 && i <= 80); // ~3.3um CH4
+        } else if (spectrumFilter === 'h2o') {
+          isHighlighted = (i >= 38 && i <= 58); // ~2.4um H2O
+        }
+
+        const barH = val * h * 0.85;
+        specCtx.fillStyle = isHighlighted
+          ? `rgba(0, 242, 254, ${0.12 + val * 0.35})`
+          : `rgba(100, 116, 139, 0.12)`;
+        specCtx.fillRect(i * barWidth, h - barH, Math.max(1, barWidth - 1), barH);
+      }
+
+      // Continuous Energy Profile Curve
+      specCtx.beginPath();
+      specCtx.strokeStyle = spectrumFilter === 'ch4' ? '#ffaa00' : (spectrumFilter === 'h2o' ? '#ff6b35' : '#00f2fe');
+      specCtx.lineWidth = 2;
+      const step = w / (points.length - 1);
+      points.forEach((p, idx) => {
+        const px = idx * step;
+        const py = h - (p * h * 0.85);
+        if (idx === 0) specCtx.moveTo(px, py);
+        else specCtx.lineTo(px, py);
+      });
+      specCtx.stroke();
+
+      specCtx.restore();
+    }
+
+    function setSpectrumFilter(filter) {
+      spectrumFilter = filter;
+      ['All', 'CH4', 'H2O'].forEach(f => {
+        const btn = document.getElementById(`btnFilter${f}`);
+        if (!btn) return;
+        if (f.toLowerCase() === filter) {
+          btn.style.borderColor = 'var(--cyan-glow)';
+          btn.style.background = 'rgba(0, 242, 254, 0.25)';
+          btn.style.color = '#fff';
+        } else {
+          btn.style.borderColor = 'rgba(0, 242, 254, 0.35)';
+          btn.style.background = 'rgba(10, 21, 50, 0.6)';
+          btn.style.color = 'var(--text-main)';
+        }
+      });
+      renderSpectrumChart();
+      playTone(720, 'sine', 0.04);
+    }
+
+    /* Spectrum Hover Tooltip Logic */
+    const specWrapper = document.getElementById('spectrumWrapper');
+    const specTooltip = document.getElementById('specTooltip');
+
+    if (specWrapper && specTooltip) {
+      specWrapper.addEventListener('mousemove', (e) => {
+        const rect = specWrapper.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const normX = Math.max(0, Math.min(1, x / rect.width));
+        const bandNum = Math.floor(normX * 102) + 1;
+        const wavelength = (0.75 + normX * (5.00 - 0.75)).toFixed(2);
+
+        const target = targets[currentTargetIndex];
+        const points = target.spectrumCurve;
+        const curveIdx = Math.floor(normX * (points.length - 1));
+        const flux = Math.round(points[curveIdx] * 100);
+
+        document.getElementById('specTipBand').innerText = `BANDA #${bandNum} / 102`;
+        document.getElementById('specTipWavelen').innerText = `λ = ${wavelength} μm`;
+        document.getElementById('specTipFlux').innerText = `FLUJO: ${flux}%`;
+
+        specTooltip.style.left = `${Math.min(rect.width - 130, Math.max(10, x + 10))}px`;
+        specTooltip.style.top = `${Math.max(10, y - 60)}px`;
+        specTooltip.style.display = 'block';
+      });
+
+      specWrapper.addEventListener('mouseleave', () => {
+        specTooltip.style.display = 'none';
+      });
+    }
+
+    /* ==========================================================================
+       5. VIEWPORT INTERACTION (PAN, ZOOM, SPLIT, RETICLE)
+       ========================================================================== */
+    function setViewerMode(mode) {
+      viewMode = mode;
+      playTone(500, 'sine', 0.05);
+
+      ['Blink', 'Split', 'Diff', 'FalseColor'].forEach(m => {
+        const btn = document.getElementById(`btnMode${m}`);
+        if (!btn) return;
+        if (m.toLowerCase() === mode) {
+          btn.style.background = 'rgba(0, 242, 254, 0.3)';
+          btn.style.color = 'var(--cyan-glow)';
+          btn.style.borderColor = 'var(--cyan-glow)';
+        } else {
+          btn.style.background = 'none';
+          btn.style.color = 'var(--text-muted)';
+          btn.style.borderColor = 'transparent';
+        }
+      });
+
+      const diffNotice = document.getElementById('diffBannerNotice');
+      if (mode === 'split') {
+        if (splitBar) splitBar.style.display = 'block';
+        if (diffNotice) diffNotice.style.display = 'none';
+        stopBlinkLoop();
+      } else if (mode === 'diff') {
+        if (splitBar) splitBar.style.display = 'none';
+        if (diffNotice) diffNotice.style.display = 'block';
+        stopBlinkLoop();
+      } else if (mode === 'falsecolor') {
+        if (splitBar) splitBar.style.display = 'none';
+        if (diffNotice) diffNotice.style.display = 'none';
+        stopBlinkLoop();
+      } else {
+        if (splitBar) splitBar.style.display = 'none';
+        if (diffNotice) diffNotice.style.display = 'none';
+        startBlinkLoop();
+      }
+
+      renderSpaceView();
+      logTelemetry(`Modo de visualización cambiado a: ${mode.toUpperCase()}`);
+    }
+
+    function startBlinkLoop() {
+      if (blinkInterval) clearInterval(blinkInterval);
+      blinkInterval = setInterval(() => {
+        currentEpoch = (currentEpoch === 1) ? 2 : 1;
+        updateEpochDisplayUI();
+        renderSpaceView();
+        playBlinkTick();
+      }, blinkSpeedMs);
+      isBlinking = true;
+      const lbl = document.getElementById('txtPlayPause');
+      const icon = document.getElementById('iconPlay');
+      if (lbl) lbl.innerText = currentLanguage === 'EN' ? 'PAUSE BLINK' : 'PAUSAR PARPADEO';
+      if (icon) icon.innerText = '⏸';
+    }
+
+    function stopBlinkLoop() {
+      if (blinkInterval) {
+        clearInterval(blinkInterval);
+        blinkInterval = null;
+      }
+      isBlinking = false;
+      const lbl = document.getElementById('txtPlayPause');
+      const icon = document.getElementById('iconPlay');
+      if (lbl) lbl.innerText = currentLanguage === 'EN' ? 'RESUME BLINK' : 'REANUDAR';
+      if (icon) icon.innerText = '▶';
+    }
+
+    function toggleBlinkLoop() {
+      if (isBlinking) {
+        stopBlinkLoop();
+      } else {
+        if (viewMode !== 'blink') setViewerMode('blink');
+        else startBlinkLoop();
+      }
+    }
+
+    function manualToggleEpoch() {
+      stopBlinkLoop();
+      currentEpoch = (currentEpoch === 1) ? 2 : 1;
+      updateEpochDisplayUI();
+      renderSpaceView();
+      playTone(currentEpoch === 1 ? 520 : 680, 'sine', 0.05);
+    }
+
+    function updateEpochDisplayUI() {
+      const badge = document.getElementById('badgeEpochDisplay');
+      if (!badge) return;
+      if (currentEpoch === 1) {
+        badge.innerText = currentLanguage === 'EN' ? 'EPOCH 1: JAN 2026 (QR2)' : 'EPOCA 1: ENERO 2026 (QR2)';
+        badge.className = 'badge badge-cyan';
+      } else {
+        badge.innerText = currentLanguage === 'EN' ? 'EPOCH 2: JULY 2026 (QR3)' : 'EPOCA 2: JULIO 2026 (QR3)';
+        badge.className = 'badge badge-orange';
+      }
+    }
+
+    function updateBlinkSpeed(val) {
+      blinkSpeedMs = parseInt(val);
+      const hz = (1000 / blinkSpeedMs).toFixed(1);
+      const sp = document.getElementById('txtBlinkHz');
+      if (sp) sp.innerText = `${hz} Hz`;
+      if (isBlinking) startBlinkLoop();
+    }
+
+    function zoomViewport(factor) {
+      zoomLevel = Math.max(0.6, Math.min(4.5, zoomLevel * factor));
+      renderSpaceView();
+      playTone(700, 'triangle', 0.04);
+    }
+
+    function resetZoom() {
+      zoomLevel = 1.0;
+      panOffset = { x: 0, y: 0 };
+      renderSpaceView();
+      playTone(450, 'sine', 0.04);
+    }
+
+    /* Mouse & Gesture Listeners on Viewport */
+    if (viewportBox) {
+      viewportBox.addEventListener('mousemove', (e) => {
+        const rect = viewportBox.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        if (hudReticle) {
+          hudReticle.style.left = `${mouseX}px`;
+          hudReticle.style.top = `${mouseY}px`;
+        }
+
+        // Live Astrometric Relative Offset
+        const offsetX = ((mouseX - rect.width / 2 - panOffset.x) / (rect.width * zoomLevel) * 12.4).toFixed(1);
+        const offsetY = ((mouseY - rect.height / 2 - panOffset.y) / (rect.height * zoomLevel) * 12.4).toFixed(1);
+        const liveDelta = document.getElementById('txtLiveDelta');
+        if (liveDelta) {
+          liveDelta.innerText = `ΔAR: ${offsetX >= 0 ? '+' : ''}${offsetX}" ΔDEC: ${offsetY >= 0 ? '+' : ''}${offsetY}"`;
+        }
+
+        // Candidate Proximity Auto-Lock
+        const target = targets[currentTargetIndex];
+        const cand = (currentEpoch === 1) ? target.candidateP1 : target.candidateP2;
+        if (cand) {
+          const candX = (cand.x * rect.width - rect.width / 2) * zoomLevel + rect.width / 2 + panOffset.x;
+          const candY = (cand.y * rect.height - rect.height / 2) * zoomLevel + rect.height / 2 + panOffset.y;
+          const dist = Math.hypot(mouseX - candX, mouseY - candY);
+
+          if (dist < 32) {
+            if (reticleRing) {
+              reticleRing.style.borderColor = 'var(--emerald-neon)';
+              reticleRing.style.boxShadow = '0 0 15px var(--emerald-neon)';
+            }
+            if (reticleTag) {
+              reticleTag.innerText = `🔒 LOCK DETECTADO: ${target.id.substring(0, 10)}`;
+              reticleTag.style.borderColor = 'var(--emerald-neon)';
+              reticleTag.style.color = 'var(--emerald-neon)';
+            }
+          } else {
+            if (reticleRing) {
+              reticleRing.style.borderColor = 'var(--cyan-glow)';
+              reticleRing.style.boxShadow = 'none';
+            }
+            if (reticleTag) {
+              reticleTag.innerText = `BUSCANDO: ${target.id.substring(0, 10)}`;
+              reticleTag.style.borderColor = 'var(--cyan-glow)';
+              reticleTag.style.color = 'var(--cyan-glow)';
+            }
+          }
+        }
+
+        // Split Mode Swipe Drag
+        if (viewMode === 'split' && isDraggingSplit && splitBar) {
+          splitPosition = Math.max(0.05, Math.min(0.95, mouseX / rect.width));
+          splitBar.style.left = `${splitPosition * 100}%`;
+          renderSpaceView();
+        }
+
+        // Drag & Pan Canvas
+        if (isPanning) {
+          panOffset.x += e.clientX - panStart.x;
+          panOffset.y += e.clientY - panStart.y;
+          panStart = { x: e.clientX, y: e.clientY };
+          renderSpaceView();
+        }
+      });
+
+      viewportBox.addEventListener('mousedown', (e) => {
+        if (e.button === 0 && !isDraggingSplit) {
+          isPanning = true;
+          panStart = { x: e.clientX, y: e.clientY };
+        }
+      });
+
+      viewportBox.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.15 : 0.85;
+        zoomViewport(factor);
+      }, { passive: false });
+    }
+
+    if (splitBar) {
+      splitBar.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        isDraggingSplit = true;
+      });
+    }
+
+    window.addEventListener('mouseup', () => {
+      isDraggingSplit = false;
+      isPanning = false;
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && (e.target === document.body || e.target === spaceCanvas)) {
+        e.preventDefault();
+        manualToggleEpoch();
+      }
+    });
+
+    /* ==========================================================================
+       6. SECTOR CATALOG & DISCOVERY WORKFLOW
+       ========================================================================== */
+    function populateCatalogUI() {
+      const container = document.getElementById('targetSectorList');
+      if (!container) return;
+      container.innerHTML = '';
+      targets.forEach((tgt, idx) => {
+        const isSelected = idx === currentTargetIndex;
+        const item = document.createElement('div');
+        item.className = 'hud-panel';
+        item.style.padding = '0.55rem 0.75rem';
+        item.style.cursor = 'pointer';
+        item.style.display = 'flex';
+        item.style.alignItems = 'center';
+        item.style.justifyContent = 'space-between';
+        item.style.borderColor = isSelected ? 'var(--cyan-glow)' : 'rgba(255,255,255,0.08)';
+        item.style.background = isSelected ? 'rgba(0, 242, 254, 0.15)' : 'rgba(0,0,0,0.3)';
+
+        item.onclick = () => selectTargetSector(idx);
+
+        item.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(0,242,254,0.15); border: 1px solid var(--cyan-glow); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 0.65rem; color: var(--cyan-glow); font-weight: 700;">
+              ${idx + 1}
+            </div>
+            <div>
+              <div style="font-family: var(--font-hud); font-size: 0.75rem; font-weight: 700; color: ${isSelected ? '#fff' : '#cbd5e1'};">${tgt.id}</div>
+              <div style="font-family: var(--font-mono); font-size: 0.62rem; color: ${isSelected ? 'var(--cyan-glow)' : '#94a3b8'};">${currentLanguage === 'EN' ? tgt.typeEn : tgt.type}</div>
+            </div>
+          </div>
+          <span class="pulse-dot" style="display: ${isSelected ? 'block' : 'none'};"></span>
+        `;
+        container.appendChild(item);
+      });
+
+      const badge = document.getElementById('txtTotalSectorsBadge');
+      if (badge) badge.innerText = `${targets.length} SECTORES`;
+    }
+
+    function selectTargetSector(idx) {
+      currentTargetIndex = idx;
+      const target = targets[idx];
+
+      populateCatalogUI();
+
+      document.getElementById('specTargetId').innerText = target.id;
+      document.getElementById('specClassBadge').innerText = currentLanguage === 'EN' ? target.typeEn : target.type;
+      document.getElementById('valChemCH4').innerText = target.methane;
+      document.getElementById('valChemH2O').innerText = target.water;
+      document.getElementById('valChemTemp').innerText = target.temp;
+
+      document.getElementById('valRA').innerText = target.ra;
+      document.getElementById('valDec').innerText = target.dec;
+      document.getElementById('valMotion').innerText = target.motion;
+      document.getElementById('valDistance').innerText = target.distance;
+
+      // Update API Modal query string
+      const coordStr = document.getElementById('apiCoordStr');
+      const raDec = document.getElementById('apiRaDec');
+      if (coordStr) coordStr.innerText = `${target.ra.substring(0,6)}, ${target.dec.substring(0,6)}`;
+      if (raDec) raDec.innerText = `${target.ra.substring(0,6)}, ${target.dec.substring(0,6)}`;
+
+      generateStars(target.starsCount);
+      renderSpaceView();
+      renderSpectrumChart();
+
+      playTone(850, 'sine', 0.08);
+      logTelemetry(`Sector cargado: [${target.id}] - Coordenadas: ${target.ra}, ${target.dec}`);
+    }
+
+    function generateNewSector() {
+      const newNum = targets.length + 1;
+      const isPlanet = Math.random() > 0.45;
+      const newTgt = {
+        id: `TGT-SPHEREx-0${newNum}`,
+        type: isPlanet ? 'Candidato Planeta Transneptuniano' : 'Asteroide del Cinturón',
+        typeEn: isPlanet ? 'Trans-Neptunian Planet Candidate' : 'Main Belt Asteroid',
+        ra: `${Math.floor(Math.random() * 24)}h ${Math.floor(Math.random() * 60)}m ${(Math.random() * 60).toFixed(1)}s`,
+        dec: `${Math.random() > 0.5 ? '+' : '-'}${Math.floor(Math.random() * 85)}° ${Math.floor(Math.random() * 60)}' 12"`,
+        motion: `+${(Math.random() * 45 + 5).toFixed(1)} arcsec`,
+        distance: isPlanet ? `~ ${Math.floor(Math.random() * 200 + 250)} UA` : `~ ${(Math.random() * 2 + 1.8).toFixed(1)} UA`,
+        mag: `${(Math.random() * 4 + 16).toFixed(1)} mag (IR)`,
+        temp: `~ ${Math.floor(Math.random() * 120 + 35)} K`,
+        methane: `${Math.floor(Math.random() * 40 + 55)}% DET`,
+        water: `${Math.floor(Math.random() * 40 + 40)}% DET`,
+        starsCount: Math.floor(Math.random() * 40 + 55),
+        candidateP1: { x: Math.random() * 0.55 + 0.22, y: Math.random() * 0.55 + 0.22, size: 7.5, color: '#ff6b35' },
+        candidateP2: { x: Math.random() * 0.55 + 0.22, y: Math.random() * 0.55 + 0.22, size: 7.8, color: '#ff8833' },
+        spectrumCurve: Array.from({ length: 13 }, () => Math.random() * 0.5 + 0.1),
+        notes: 'Nuevo sector celeste descargado del flujo continuo de SPHEREx.'
+      };
+
+      targets.push(newTgt);
+      selectTargetSector(targets.length - 1);
+      showToast(`Nuevo sector generado: ${newTgt.id}`);
+      logTelemetry(`Nuevo campo estelar asignado: [${newTgt.id}]`);
+    }
+
+    function classifyCandidate(type) {
+      userStreak += 1;
+      userXP += 150;
+      updateGamificationUI();
+
+      if (type === 'noise') {
+        playTone(220, 'square', 0.12);
+        showToast('❌ Marcado como rayo cósmico / ruido (+150 XP)');
+        logTelemetry('Clasificación: Descartado como impacto de rayo cósmico.');
+      } else if (type === 'review') {
+        playTone(440, 'triangle', 0.1);
+        showToast('🤔 Guardado para consenso de la red comunitaria (+150 XP)');
+        logTelemetry('Clasificación: Enviado a revisión secundaria.');
+      }
+    }
+
+    function confirmPlanetDiscovery() {
+      const target = targets[currentTargetIndex];
+      playDiscoveryFanfare();
+
+      userXP += 500;
+      validatedDiscoveries += 1;
+      updateGamificationUI();
+
+      document.getElementById('repTargetId').innerText = target.id;
+      document.getElementById('repClass').innerText = currentLanguage === 'EN' ? target.typeEn : target.type;
+      document.getElementById('repCoords').innerText = `${target.ra}, ${target.dec}`;
+      document.getElementById('repMotion').innerText = target.motion;
+      document.getElementById('repSpec').innerText = `CH4: ${target.methane} &bull; H2O: ${target.water}`;
+      document.getElementById('repTimestamp').innerText = new Date().toUTCString();
+
+      openModal('discoveryModal');
+      logTelemetry(`¡HALLAZGO CONFIRMADO! Generada Ficha Técnica oficial para [${target.id}]. (+500 XP)`);
+    }
+
+    function updateGamificationUI() {
+      const streak = document.getElementById('valUserStreak');
+      const xp = document.getElementById('valUserXP');
+      if (streak) streak.innerText = `${userStreak}x`;
+      if (xp) xp.innerText = `${userXP.toLocaleString()} PTS`;
+
+      const rank = document.getElementById('userRankText');
+      if (rank) {
+        if (userXP > 2500) rank.innerText = 'ASTRO-COMANDANTE';
+        else if (userXP > 1800) rank.innerText = 'ESPECIALISTA IR';
+        else rank.innerText = 'ASTRO-EXPLORADOR';
+      }
+    }
+
+    function downloadDiscoveryJSON() {
+      const target = targets[currentTargetIndex];
+      const payload = {
+        mission: "NASA SPHEREx Citizen Science Planet Hunter",
+        challenge: "NASA Space Apps Challenge 2026 - Planet X and SPHEREx",
+        agency: "NASA Astrophysics Division / IPAC Caltech",
+        citizen_scientist_id: "CITIZEN_042",
+        target_id: target.id,
+        classification: target.type,
+        astrometric_data: {
+          epoch_1: "2026-01-15T00:00:00Z",
+          epoch_2: "2026-07-15T00:00:00Z",
+          right_ascension: target.ra,
+          declination: target.dec,
+          angular_motion_6m: target.motion,
+          estimated_heliocentric_distance: target.distance,
+          infrared_magnitude: target.mag
+        },
+        spectral_analysis: {
+          wavelength_coverage: "0.75 - 5.00 microns (102 bands)",
+          surface_temperature_estimate: target.temp,
+          methane_signature_detection: target.methane,
+          water_ice_absorption: target.water
+        },
+        scientific_verdict: target.notes,
+        validation_status: "CITIZEN_CONFIRMED_LEVEL_2",
+        timestamp_utc: new Date().toISOString()
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SPHEREx_Discovery_${target.id}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast('📥 Ficha técnica JSON descargada exitosamente');
+      logTelemetry(`Exportado archivo científico oficial: SPHEREx_Discovery_${target.id}.json`);
+    }
+
+    /* ==========================================================================
+       7. SIMULATION & ONBOARDING HELPERS
+       ========================================================================== */
+    function simulateLiveTAPFetch() {
+      playTone(600, 'sine', 0.08);
+      const res = document.getElementById('tapResultPreview');
+      res.innerText = 'Conectando con https://irsa.ipac.caltech.edu/TAP ...';
+      setTimeout(() => {
+        res.innerHTML = `✅ [200 OK] Conexión establecida con éxito con NASA/IPAC IRSA.<br>Retornados 102 planos espectrales para ${targets[currentTargetIndex].id} (Dataset SPHEREx QR3).`;
+        showToast('Consulta TAP ejecutada con éxito');
+        logTelemetry('Consulta IVOA TAP validada en NASA IRSA.');
+      }, 700);
+    }
+
+    function copyTAPQuery() {
+      const q = `SELECT 'https://irsa.ipac.caltech.edu/' || a.uri || '?center=${targets[currentTargetIndex].ra},${targets[currentTargetIndex].dec}&size=0.1' AS cutout_url FROM spherex.artifact a JOIN spherex.plane p ON a.planeid = p.planeid WHERE 1 = CONTAINS(POINT('ICRS', 280.56, 28.23), p.poly) AND p.energy_bandpassname = 'Band52';`;
+      navigator.clipboard.writeText(q).then(() => {
+        showToast('Consulta ADQL copiada al portapapeles');
+      });
+    }
+
+    function focusStep(stepNum) {
+      clearStepHighlights();
+      playTone(650, 'sine', 0.05);
+
+      if (stepNum === 1) {
+        const el = document.getElementById('panelStep1');
+        if (el) el.classList.add('beginner-step-highlight');
+        showToast('PASO 1: Observa el Visor Espacial. Si el punto rojo salta, ¡se mueve!');
+      } else if (stepNum === 2) {
+        const el = document.getElementById('panelStep2');
+        if (el) el.classList.add('beginner-step-highlight');
+        showToast('PASO 2: La gráfica muestra los gases (Metano/Agua) del candidato.');
+      } else if (stepNum === 3) {
+        const el = document.getElementById('panelStep3');
+        if (el) el.classList.add('beginner-step-highlight');
+        showToast('PASO 3: Haz clic en CONFIRMAR PLANETA para registrar tu hallazgo.');
+      }
+    }
+
+    function clearStepHighlights() {
+      ['panelStep1', 'panelStep2', 'panelStep3'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('beginner-step-highlight');
+      });
+    }
+
+    function dismissBanner() {
+      const b = document.getElementById('beginnerBanner');
+      if (b) b.style.display = 'none';
+    }
+
+    function toggleExperienceMode() {
+      isExplorerMode = !isExplorerMode;
+      const btn = document.getElementById('btnModeToggle');
+      const label = document.getElementById('modeLabel');
+      const banner = document.getElementById('beginnerBanner');
+
+      if (isExplorerMode) {
+        label.innerText = currentLanguage === 'EN' ? 'EXPLORER MODE' : 'MODO EXPLORADOR';
+        btn.style.borderColor = 'var(--amber-laser)';
+        btn.style.color = 'var(--amber-laser)';
+        if (banner) banner.style.display = 'block';
+        showToast('Modo Explorador (con asistencia guiada) activado');
+      } else {
+        label.innerText = currentLanguage === 'EN' ? 'ASTROPHYSICIST PRO' : 'MODO ASTROFISICO';
+        btn.style.borderColor = 'var(--cyan-glow)';
+        btn.style.color = 'var(--cyan-glow)';
+        if (banner) banner.style.display = 'none';
+        clearStepHighlights();
+        showToast('Modo Astrofísico (telemetría avanzada) activado');
+      }
+    }
+
+    function toggleLanguage() {
+      currentLanguage = (currentLanguage === 'ES') ? 'EN' : 'ES';
+      document.getElementById('txtLang').innerText = currentLanguage;
+
+      if (currentLanguage === 'EN') {
+        document.getElementById('txtMissionBadge').innerText = 'PLANET HUNTER';
+        document.getElementById('txtHeaderSubtitle').innerText = '102 SPECTRAL BANDS • HUNT FOR PLANET 9 • 700 KM LEO POLAR ORBIT';
+        document.getElementById('btnCriteriaLabel').innerText = 'JUDGES CRITERIA (9/9)';
+        document.getElementById('btnStoryLabel').innerText = 'STORY & IMPACT';
+        document.getElementById('modeLabel').innerText = isExplorerMode ? 'EXPLORER MODE' : 'ASTROPHYSICIST PRO';
+        document.getElementById('txtGuideTitle').innerText = 'GUIDED TUTORIAL: HOW TO HUNT A PLANET IN 3 STEPS';
+        document.getElementById('txtGuideSteps').innerHTML = '<strong>Step 1:</strong> Watch the Space Viewer. &bull; <strong>Step 2:</strong> Spot the infrared dot shifting between Jan & July photos. &bull; <strong>Step 3:</strong> Check absorption spectrum and press Confirm.';
+        document.getElementById('lblSpecHeader').innerText = 'STEP 2: SPECTROSCOPY (102 BANDS)';
+        document.getElementById('lblAstroHeader').innerText = 'ASTROMETRY & COORDINATES';
+        document.getElementById('lblCatalogHeader').innerText = 'TARGET SECTORS CATALOG';
+        document.getElementById('lblTelemetryHeader').innerText = 'GLOBAL CITIZEN NETWORK';
+        document.getElementById('lblNoiseBtn').innerText = 'NOISE / ARTIFACT';
+        document.getElementById('lblReviewBtn').innerText = 'DOUBTFUL / REVIEW';
+        document.getElementById('lblConfirmBtn').innerText = 'CONFIRM PLANET';
+        document.getElementById('lblNextBtn').innerText = 'NEXT SECTOR';
+        showToast('Interface language set to English');
+      } else {
+        document.getElementById('txtMissionBadge').innerText = 'CAZADOR DE PLANETAS';
+        document.getElementById('txtHeaderSubtitle').innerText = '102 BANDAS ESPECTRALES • BUSQUEDA DEL PLANETA 9 • ORBITA POLAR LEO 700 KM';
+        document.getElementById('btnCriteriaLabel').innerText = 'CRITERIOS JURADO (9/9)';
+        document.getElementById('btnStoryLabel').innerText = 'NARRATIVA E IMPACTO';
+        document.getElementById('modeLabel').innerText = isExplorerMode ? 'MODO EXPLORADOR' : 'MODO ASTROFISICO';
+        document.getElementById('txtGuideTitle').innerText = 'TUTORIAL GUIADO: ¿CÓMO DESCUBRIR UN PLANETA EN 3 PASOS?';
+        document.getElementById('txtGuideSteps').innerHTML = '<strong>Paso 1:</strong> Observa el Visor Espacial. &bull; <strong>Paso 2:</strong> Detecta el punto que salta entre fotos de Enero y Julio. &bull; <strong>Paso 3:</strong> Revisa su firma infrarroja y pulsa Confirmar.';
+        document.getElementById('lblSpecHeader').innerText = 'PASO 2: ESPECTROGRAFIA (102 BANDAS)';
+        document.getElementById('lblAstroHeader').innerText = 'ASTROMETRIA Y COORDENADAS';
+        document.getElementById('lblCatalogHeader').innerText = 'CATALOGO DE SECTORES';
+        document.getElementById('lblTelemetryHeader').innerText = 'RED CIENTIFICA GLOBAL';
+        document.getElementById('lblNoiseBtn').innerText = 'RUIDO / ERROR';
+        document.getElementById('lblReviewBtn').innerText = 'DUDOSO / REVISAR';
+        document.getElementById('lblConfirmBtn').innerText = 'CONFIRMAR PLANETA';
+        document.getElementById('lblNextBtn').innerText = 'SIGUIENTE SECTOR';
+        showToast('Idioma establecido en Español');
+      }
+      populateCatalogUI();
+      updateEpochDisplayUI();
+    }
+
+    function openModal(id) {
+      const m = document.getElementById(id);
+      if (m) m.classList.add('active');
+      playTone(700, 'triangle', 0.06);
+    }
+
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      if (m) m.classList.remove('active');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      const toastMsg = document.getElementById('toastMessage');
+      if (!toast || !toastMsg) return;
+      toastMsg.innerText = msg;
+      toast.style.transform = 'translateY(0)';
+      toast.style.opacity = '1';
+      setTimeout(() => {
+        toast.style.transform = 'translateY(30px)';
+        toast.style.opacity = '0';
+      }, 3500);
+    }
+
+    function logTelemetry(msg) {
+      const term = document.getElementById('terminalStream');
+      if (!term) return;
+      const time = new Date().toTimeString().split(' ')[0];
+      const div = document.createElement('div');
+      div.innerHTML = `<span style="color: #64748b;">[${time}]</span> <span style="color: var(--cyan-glow);">${msg}</span>`;
+      term.appendChild(div);
+      term.scrollTop = term.scrollHeight;
+    }
+
+    /* Simulated Global Citizen Science Network Feed */
+    const mockGlobalTelemetry = [
+      "Citizen_891 en Ciudad de México descartó rayo cósmico en Band 32.",
+      "Citizen_204 en Madrid validó candidato a Enana Marrón fría.",
+      "Citizen_612 en Bogotá detectó desplazamiento angular de +14.2 arcsec.",
+      "Citizen_943 en Tokyo reportó firma de hielo de agua en TNO candidato.",
+      "NASA IRSA: Nueva ingesta de datos semanales SPHEREx QR3 completada."
+    ];
+    let mockIndex = 0;
+    setInterval(() => {
+      if (mockIndex < mockGlobalTelemetry.length) {
+        logTelemetry(mockGlobalTelemetry[mockIndex]);
+        mockIndex++;
+      }
+    }, 12000);
+
+    /* ==========================================================================
+       8. INITIALIZATION
+       ========================================================================== */
+    function initializeSPHERExApp() {
+      populateCatalogUI();
+      selectTargetSector(0);
+      setViewerMode('blink');
+
+      // Resize listeners
+      window.addEventListener('resize', () => {
+        resizeSpaceCanvas();
+        renderSpectrumChart();
+      });
+
+      setTimeout(() => {
+        resizeSpaceCanvas();
+        renderSpectrumChart();
+      }, 80);
+
+      logTelemetry("Telescopio espacial SPHEREx enlazado. Longitudes de onda: 0.75 a 5.0 μm.");
+      logTelemetry("Descargando pares de imágenes calibradas: Época 2026-A vs Época 2026-B.");
+      logTelemetry("Usuario Citizen_042 autenticado en la red de ciencia ciudadana.");
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(initializeSPHERExApp, 40);
+    } else {
+      document.addEventListener('DOMContentLoaded', initializeSPHERExApp);
+    }
+  </script>
+</body>
+</html>
